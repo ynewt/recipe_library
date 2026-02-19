@@ -1,0 +1,7 @@
+flask
+requests
+beautifulsoup4
+recipe-scrapers
+yt-dlp
+torch
+transformers

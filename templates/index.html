@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Library</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fafafa;
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #d35400;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    header h1 { font-size: 1.3rem; }
+
+    header button {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    header button:hover { background: rgba(255,255,255,0.35); }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left panel */
+    .sidebar {
+      width: 400px;
+      min-width: 320px;
+      background: white;
+      border-right: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .search-input:focus { border-color: #d35400; }
+
+    .tag-filters {
+      padding: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-height: none;
+      overflow-y: auto;
+      height: 80px;
+      min-height: 40px;
+    }
+
+    .tag-resize-handle {
+      height: 5px;
+      cursor: row-resize;
+      background: #e0e0e0;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      border-bottom: 1px solid #eee;
+    }
+
+    .tag-resize-handle:hover,
+    .tag-resize-handle.dragging { background: #d35400; }
+
+    .tag-chip {
+      display: inline-block;
+      padding: 0.4rem 0.85rem;
+      background: #f0f0f0;
+      border-radius: 16px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: 1px solid #e0e0e0;
+      transition: all 0.15s;
+    }
+
+    .tag-chip:hover { background: #e8e8e8; border-color: #ccc; }
+    .tag-chip.active { background: #d35400; color: white; border-color: #d35400; }
+
+    .resize-handle {
+      width: 5px;
+      cursor: col-resize;
+      background: #e0e0e0;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .resize-handle:hover,
+    .resize-handle.dragging { background: #d35400; }
+
+    .recipe-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .recipe-list-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .recipe-list-item:hover { background: #fef5ef; }
+    .recipe-list-item.active { background: #fdebd0; }
+
+    .recipe-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .recipe-list-item .recipe-info { flex: 1; min-width: 0; }
+
+    .recipe-list-item .list-delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0.2rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .recipe-list-item .list-delete:hover { color: #e74c3c; }
+
+    .recipe-list-item .title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .recipe-list-item .meta {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .recipe-list-item .tags-row {
+      margin-top: 0.3rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2rem;
+    }
+
+    .recipe-list-item .mini-tag {
+      font-size: 0.65rem;
+      background: #eee;
+      padding: 0.1rem 0.4rem;
+      border-radius: 8px;
+      color: #777;
+    }
+
+    .empty-list {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+
+    /* Right panel */
+    .detail {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .detail-empty {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      color: #bbb;
+      font-size: 1.1rem;
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .detail-header h2 {
+      font-size: 1.5rem;
+      flex: 1;
+    }
+
+    .detail-header .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      margin-left: 1rem;
+    }
+
+    .detail-header .actions button {
+      background: #f0f0f0;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .detail-header .actions button:hover { background: #e0e0e0; }
+    .detail-header .actions .delete-btn:hover { background: #e74c3c; color: white; }
+
+    .source-link {
+      display: inline-block;
+      color: #d35400;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .recipe-image {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .detail-tags {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      align-items: center;
+    }
+
+    .detail-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      background: #d35400;
+      color: white;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      gap: 0.3rem;
+    }
+
+    .detail-tag .remove-tag {
+      cursor: pointer;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    .detail-tag .remove-tag:hover { opacity: 1; }
+
+    .add-tag-btn {
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .add-tag-btn:hover { background: #e8e8e8; }
+
+    .section-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #d35400;
+      margin: 1.5rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .ingredients-list, .steps-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .ingredients-list li {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 0.9rem;
+    }
+
+    .ingredients-list li::before {
+      content: "\2022";
+      color: #d35400;
+      margin-right: 0.5rem;
+    }
+
+    .steps-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 0.9rem;
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .step-num {
+      background: #d35400;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 14px;
+      padding: 1.5rem;
+      width: 480px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: #555;
+    }
+
+    .modal input[type="text"],
+    .modal input[type="url"],
+    .modal input[type="password"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      outline: none;
+    }
+
+    .modal input:focus { border-color: #d35400; }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .modal-buttons button {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: #d35400; color: white; }
+    .btn-primary:hover { background: #b94800; }
+    .btn-secondary { background: #eee; color: #555; }
+    .btn-secondary:hover { background: #ddd; }
+
+    .modal .status {
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      color: #888;
+    }
+
+    .modal .error {
+      color: #e74c3c;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ddd;
+      border-top-color: #d35400;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Tag picker dropdown */
+    .tag-picker {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tag-picker-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      z-index: 50;
+      max-height: 250px;
+      overflow-y: auto;
+      min-width: 180px;
+      padding: 0.3rem 0;
+    }
+
+    .tag-picker-dropdown.open { display: block; }
+
+    .tag-picker-dropdown .tag-option {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .tag-picker-dropdown .tag-option:hover { background: #fef5ef; }
+
+    .tag-picker-dropdown .tag-search {
+      width: calc(100% - 0.6rem);
+      margin: 0.3rem;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .tag-picker-dropdown .create-tag {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #d35400;
+      font-weight: 600;
+    }
+
+    .tag-picker-dropdown .create-tag:hover { background: #fef5ef; }
+
+    .add-mode-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+    }
+
+    .add-tab {
+      flex: 1;
+      padding: 0.5rem;
+      border: none;
+      background: #f5f5f5;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #666;
+      font-weight: 600;
+    }
+
+    .add-tab.active {
+      background: #d35400;
+      color: white;
+    }
+
+    .add-tab:hover:not(.active) { background: #eee; }
+
+    .tag-manager-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .tag-manager-item .tag-name { font-size: 0.9rem; }
+
+    .tag-manager-item .tag-delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0.3rem;
+    }
+
+    .tag-manager-item .tag-delete:hover { color: #e74c3c; }
+
+    .user-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .user-selector select {
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .user-selector select option { color: #333; background: white; }
+
+    .user-selector .add-user-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-selector .add-user-btn:hover { background: rgba(255,255,255,0.35); }
+
+    @media (max-width: 700px) {
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; max-height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Recipe Library</h1>
+    <div style="display:flex;gap:0.75rem;align-items:center;">
+      <div class="user-selector">
+        <select id="userSelect" onchange="switchUser()"></select>
+        <button class="add-user-btn" onclick="addUser()" title="Add user">+</button>
+      </div>
+      <button onclick="openTagManager()">Manage Tags</button>
+      <button onclick="openAddModal()">+ Add Recipe</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <input class="search-input" id="searchInput" type="text" placeholder="Search recipes...">
+      </div>
+      <div class="tag-filters" id="tagFilters"></div>
+      <div class="tag-resize-handle" id="tagResizeHandle"></div>
+      <ul class="recipe-list" id="recipeList"></ul>
+    </div>
+
+    <div class="resize-handle" id="resizeHandle"></div>
+
+    <div class="detail" id="detailPanel">
+      <div class="detail-empty" id="detailEmpty">Select a recipe or add a new one</div>
+      <div id="detailContent" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Add Recipe Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <h3 id="modalTitle">Add Recipe</h3>
+
+      <div class="add-mode-tabs">
+        <button class="add-tab active" id="tabUrl" onclick="switchAddTab('url')">From URL</button>
+        <button class="add-tab" id="tabImage" onclick="switchAddTab('image')">From Image</button>
+        <button class="add-tab" id="tabManual" onclick="switchAddTab('manual')">Type It In</button>
+      </div>
+
+      <div id="addUrlSection">
+        <label>Recipe URL (webpage or video)</label>
+        <input type="url" id="addUrl" placeholder="https://..." onkeydown="if(event.key==='Enter'){event.preventDefault();submitAdd();}">
+
+        <div id="authFields" style="display:none">
+          <label>Username / Email</label>
+          <input type="text" id="addUsername" placeholder="username">
+          <label>Password</label>
+          <input type="password" id="addPassword" placeholder="password">
+        </div>
+      </div>
+
+      <div id="addImageSection" style="display:none">
+        <label>Recipe title</label>
+        <input type="text" id="imageTitle" placeholder="Recipe name...">
+        <label>Upload a screenshot of a recipe</label>
+        <input type="file" id="imageFile" accept="image/*" style="margin-bottom:0.75rem;">
+        <div id="imagePreview" style="display:none;margin-bottom:0.75rem;">
+          <img id="imagePreviewImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #ddd;">
+        </div>
+      </div>
+
+      <div id="addManualSection" style="display:none">
+        <label>Recipe title</label>
+        <input type="text" id="manualTitle" placeholder="Recipe name...">
+        <label>Ingredients (one per line)</label>
+        <textarea id="manualIngredients" rows="6" placeholder="1 cup flour&#10;2 eggs&#10;..." style="width:100%;padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:inherit;margin-bottom:0.75rem;resize:vertical;outline:none;"></textarea>
+        <label>Steps (one per line)</label>
+        <textarea id="manualSteps" rows="6" placeholder="Preheat oven to 350F&#10;Mix dry ingredients&#10;..." style="width:100%;padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:inherit;margin-bottom:0.75rem;resize:vertical;outline:none;"></textarea>
+      </div>
+
+      <div id="addStatus" class="status" style="display:none"></div>
+      <div id="addError" class="error" style="display:none"></div>
+
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeAddModal()">Cancel</button>
+        <button class="btn-primary" id="addSubmit" onclick="submitAdd()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tag Manager Modal -->
+  <div class="modal-overlay" id="tagManagerModal">
+    <div class="modal">
+      <h3>Manage Tags</h3>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+        <input type="text" id="newTagName" placeholder="New tag name..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTag();}">
+        <button class="btn-primary" onclick="addNewTag()" style="padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer">Add</button>
+      </div>
+      <ul id="tagManagerList" style="list-style:none;max-height:300px;overflow-y:auto;"></ul>
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeTagManager()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let recipes = [];
+    let allTags = [];
+    let allUsers = [];
+    let currentUserId = null;
+    let activeTag = null;
+    let selectedId = null;
+    let searchTerm = "";
+
+    // ---- API ----
+    async function api(url, opts = {}) {
+      const res = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...opts,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      if (res.status === 204) return null;
+      return res.json();
+    }
+
+    // ---- Load data ----
+    async function loadTags() {
+      allTags = await api("/api/tags");
+      renderTagFilters();
+    }
+
+    async function loadRecipes() {
+      const params = new URLSearchParams();
+      if (activeTag) params.set("tag", activeTag);
+      if (currentUserId) params.set("user_id", currentUserId);
+      const qs = params.toString();
+      const url = "/api/recipes" + (qs ? "?" + qs : "");
+      recipes = await api(url);
+      renderRecipeList();
+      // Refresh detail if selected
+      if (selectedId) {
+        const r = recipes.find(r => r.id === selectedId);
+        if (r) renderDetail(r);
+        else { selectedId = null; showEmptyDetail(); }
+      }
+    }
+
+    // ---- Tag filters ----
+    function renderTagFilters() {
+      const el = document.getElementById("tagFilters");
+      // Find tags that are actually used
+      const usedTags = new Set();
+      recipes.forEach(r => r.tags.forEach(t => usedTags.add(t.name)));
+
+      // Show all tags but highlight used ones at front
+      const sorted = [...allTags].sort((a, b) => {
+        const aUsed = usedTags.has(a.name);
+        const bUsed = usedTags.has(b.name);
+        if (aUsed && !bUsed) return -1;
+        if (!aUsed && bUsed) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      el.innerHTML = sorted.map(t =>
+        `<span class="tag-chip${activeTag === t.name ? ' active' : ''}" onclick="toggleTagFilter('${t.name.replace(/'/g, "\\'")}')">${t.name}</span>`
+      ).join("");
+    }
+
+    function toggleTagFilter(name) {
+      activeTag = activeTag === name ? null : name;
+      loadRecipes();
+      renderTagFilters();
+    }
+
+    // ---- Recipe list ----
+    function renderRecipeList() {
+      const el = document.getElementById("recipeList");
+      let filtered = recipes;
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        filtered = recipes.filter(r =>
+          r.title.toLowerCase().includes(q) ||
+          r.ingredients.some(i => i.toLowerCase().includes(q))
+        );
+      }
+
+      if (filtered.length === 0) {
+        el.innerHTML = '<li class="empty-list">No recipes found</li>';
+        return;
+      }
+
+      el.innerHTML = filtered.map(r => `
+        <li class="recipe-list-item${r.id === selectedId ? ' active' : ''}" onclick="selectRecipe(${r.id})">
+          <div class="recipe-info">
+            <div class="title">${esc(r.title)}</div>
+            <div class="meta">${r.ingredients.length} ingredients &middot; ${r.steps.length} steps</div>
+            ${r.tags.length ? `<div class="tags-row">${r.tags.map(t => `<span class="mini-tag">${esc(t.name)}</span>`).join("")}</div>` : ""}
+          </div>
+          <button class="list-delete" title="Delete" onclick="event.stopPropagation(); deleteRecipe(${r.id})">&times;</button>
+        </li>
+      `).join("");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      searchTerm = e.target.value.trim();
+      renderRecipeList();
+    });
+
+    // ---- Select & detail ----
+    function selectRecipe(id) {
+      selectedId = id;
+      const r = recipes.find(r => r.id === id);
+      if (r) renderDetail(r);
+      renderRecipeList();
+    }
+
+    function showEmptyDetail() {
+      document.getElementById("detailEmpty").style.display = "flex";
+      document.getElementById("detailContent").style.display = "none";
+    }
+
+    function renderDetail(r) {
+      document.getElementById("detailEmpty").style.display = "none";
+      const el = document.getElementById("detailContent");
+      el.style.display = "block";
+
+      el.innerHTML = `
+        <div class="detail-header">
+          <h2>${esc(r.title)}</h2>
+          <div class="actions">
+            <button onclick="editRecipe(${r.id})">Edit</button>
+            <button class="delete-btn" onclick="deleteRecipe(${r.id})">Delete</button>
+          </div>
+        </div>
+        ${r.source_url ? `<a class="source-link" href="${esc(r.source_url)}" target="_blank">${esc(r.source_url)}</a>` : ""}
+        ${r.image_url ? `<br><img class="recipe-image" src="${esc(r.image_url)}" alt="">` : ""}
+        <div class="detail-tags" id="detailTags">
+          ${r.tags.map(t => `
+            <span class="detail-tag">
+              ${esc(t.name)}
+              <span class="remove-tag" onclick="removeTag(${r.id}, ${t.id})">&times;</span>
+            </span>
+          `).join("")}
+          <span class="tag-picker" id="tagPicker">
+            <span class="add-tag-btn" onclick="toggleTagPicker()">+ Tag</span>
+            <div class="tag-picker-dropdown" id="tagPickerDropdown">
+              <input class="tag-search" id="tagPickerSearch" type="text" placeholder="Search or create..." oninput="filterTagPicker()" onkeydown="handleTagPickerKey(event)">
+              <div id="tagPickerOptions"></div>
+            </div>
+          </span>
+        </div>
+        ${r.ingredients.length ? `
+          <div class="section-label">Ingredients</div>
+          <ul class="ingredients-list">
+            ${r.ingredients.map(i => `<li>${esc(i)}</li>`).join("")}
+          </ul>
+        ` : ""}
+        ${r.steps.length ? `
+          <div class="section-label">Steps</div>
+          <ol class="steps-list">
+            ${r.steps.map((s, idx) => `<li><span class="step-num">${idx + 1}</span><span>${esc(s)}</span></li>`).join("")}
+          </ol>
+        ` : ""}
+        ${!r.ingredients.length && !r.steps.length ? '<p style="color:#999;margin-top:1rem;">No ingredients or steps extracted. Click Edit to add manually.</p>' : ""}
+      `;
+    }
+
+    // ---- Tag picker ----
+    function toggleTagPicker() {
+      const dd = document.getElementById("tagPickerDropdown");
+      dd.classList.toggle("open");
+      if (dd.classList.contains("open")) {
+        document.getElementById("tagPickerSearch").value = "";
+        filterTagPicker();
+        document.getElementById("tagPickerSearch").focus();
+      }
+    }
+
+    function handleTagPickerKey(e) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const q = (document.getElementById("tagPickerSearch").value || "").trim();
+      if (!q) return;
+      const r = recipes.find(r => r.id === selectedId);
+      const usedIds = new Set(r ? r.tags.map(t => t.id) : []);
+      // If there's an exact match in available tags, add it
+      const match = allTags.find(t => !usedIds.has(t.id) && t.name.toLowerCase() === q.toLowerCase());
+      if (match) {
+        addTag(selectedId, match.id);
+      } else {
+        // Create new tag and add it
+        createAndAddTag(q);
+      }
+    }
+
+    function filterTagPicker() {
+      const q = (document.getElementById("tagPickerSearch").value || "").toLowerCase();
+      const r = recipes.find(r => r.id === selectedId);
+      const usedIds = new Set(r ? r.tags.map(t => t.id) : []);
+
+      const available = allTags.filter(t => !usedIds.has(t.id) && t.name.toLowerCase().includes(q));
+      const el = document.getElementById("tagPickerOptions");
+      let html = available.map(t =>
+        `<div class="tag-option" onclick="addTag(${selectedId}, ${t.id})">${esc(t.name)}</div>`
+      ).join("");
+
+      if (q && !allTags.some(t => t.name.toLowerCase() === q)) {
+        html += `<div class="create-tag" onclick="createAndAddTag('${q.replace(/'/g, "\\'")}')">+ Create "${esc(q)}"</div>`;
+      }
+
+      el.innerHTML = html || '<div class="tag-option" style="color:#bbb">No tags available</div>';
+    }
+
+    async function addTag(recipeId, tagId) {
+      await api(`/api/recipes/${recipeId}/tags`, { method: "POST", body: { tag_id: tagId } });
+      await loadRecipes();
+      await loadTags();
+    }
+
+    async function removeTag(recipeId, tagId) {
+      await api(`/api/recipes/${recipeId}/tags/${tagId}`, { method: "DELETE" });
+      await loadRecipes();
+      await loadTags();
+    }
+
+    async function createAndAddTag(name) {
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+      const tag = await api("/api/tags", { method: "POST", body: { name } });
+      await api(`/api/recipes/${selectedId}/tags`, { method: "POST", body: { tag_id: tag.id } });
+      await loadTags();
+      await loadRecipes();
+    }
+
+    // Close tag picker on outside click
+    document.addEventListener("click", (e) => {
+      const picker = document.getElementById("tagPicker");
+      if (picker && !picker.contains(e.target)) {
+        const dd = document.getElementById("tagPickerDropdown");
+        if (dd) dd.classList.remove("open");
+      }
+    });
+
+    // ---- Add recipe modal ----
+    let addMode = "url";
+
+    function switchAddTab(mode) {
+      addMode = mode;
+      document.getElementById("tabUrl").classList.toggle("active", mode === "url");
+      document.getElementById("tabImage").classList.toggle("active", mode === "image");
+      document.getElementById("tabManual").classList.toggle("active", mode === "manual");
+      document.getElementById("addUrlSection").style.display = mode === "url" ? "block" : "none";
+      document.getElementById("addImageSection").style.display = mode === "image" ? "block" : "none";
+      document.getElementById("addManualSection").style.display = mode === "manual" ? "block" : "none";
+      document.getElementById("addError").style.display = "none";
+      if (mode === "url") document.getElementById("addUrl").focus();
+      if (mode === "manual") document.getElementById("manualTitle").focus();
+    }
+
+    function openAddModal() {
+      document.getElementById("addModal").classList.add("open");
+      document.getElementById("addUrl").value = "";
+      document.getElementById("addUsername").value = "";
+      document.getElementById("addPassword").value = "";
+      document.getElementById("imageTitle").value = "";
+      document.getElementById("imageFile").value = "";
+      document.getElementById("imagePreview").style.display = "none";
+      document.getElementById("manualTitle").value = "";
+      document.getElementById("manualIngredients").value = "";
+      document.getElementById("manualSteps").value = "";
+      document.getElementById("authFields").style.display = "none";
+      document.getElementById("addStatus").style.display = "none";
+      document.getElementById("addError").style.display = "none";
+      document.getElementById("addSubmit").disabled = false;
+      document.getElementById("modalTitle").textContent = "Add Recipe";
+      switchAddTab("url");
+    }
+
+    function closeAddModal() {
+      document.getElementById("addModal").classList.remove("open");
+    }
+
+    // Image preview
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("imageFile").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            document.getElementById("imagePreviewImg").src = ev.target.result;
+            document.getElementById("imagePreview").style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        } else {
+          document.getElementById("imagePreview").style.display = "none";
+        }
+      });
+    });
+
+    // ---- Tag Manager ----
+    function openTagManager() {
+      document.getElementById("tagManagerModal").classList.add("open");
+      document.getElementById("newTagName").value = "";
+      renderTagManagerList();
+      document.getElementById("newTagName").focus();
+    }
+
+    function closeTagManager() {
+      document.getElementById("tagManagerModal").classList.remove("open");
+    }
+
+    function renderTagManagerList() {
+      const el = document.getElementById("tagManagerList");
+      if (allTags.length === 0) {
+        el.innerHTML = '<li style="color:#bbb;padding:0.5rem 0;">No tags yet</li>';
+        return;
+      }
+      el.innerHTML = allTags.map(t => `
+        <li class="tag-manager-item">
+          <span class="tag-name">${esc(t.name)}</span>
+          <button class="tag-delete" title="Delete tag" onclick="deleteTag(${t.id}, '${esc(t.name).replace(/'/g, "\\'")}')">&times;</button>
+        </li>
+      `).join("");
+    }
+
+    async function addNewTag() {
+      let name = document.getElementById("newTagName").value.trim();
+      if (!name) return;
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+      await api("/api/tags", { method: "POST", body: { name } });
+      document.getElementById("newTagName").value = "";
+      await loadTags();
+      renderTagManagerList();
+    }
+
+    async function deleteTag(tagId, tagName) {
+      if (!confirm(`Delete tag "${tagName}"? It will be removed from all recipes.`)) return;
+      await api(`/api/tags/${tagId}`, { method: "DELETE" });
+      await loadTags();
+      await loadRecipes();
+      renderTagManagerList();
+    }
+
+    async function submitAdd() {
+      if (addMode === "image") return submitAddImage();
+      if (addMode === "manual") return submitAddManual();
+      return submitAddUrl();
+    }
+
+    async function submitAddManual() {
+      const title = document.getElementById("manualTitle").value.trim();
+      if (!title) {
+        showAddError("Please enter a recipe title.");
+        return;
+      }
+
+      const ingredients = document.getElementById("manualIngredients").value.split("\n").map(l => l.trim()).filter(Boolean);
+      const steps = document.getElementById("manualSteps").value.split("\n").map(l => l.trim()).filter(Boolean);
+
+      const submitBtn = document.getElementById("addSubmit");
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, ingredients, steps, user_id: currentUserId }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAddError(data.error || "Unknown error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        closeAddModal();
+        await loadRecipes();
+        await loadTags();
+        selectRecipe(data.id);
+      } catch (e) {
+        showAddError("Network error: " + e.message);
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function submitAddUrl() {
+      const url = document.getElementById("addUrl").value.trim();
+      if (!url) {
+        showAddError("Please enter a URL.");
+        return;
+      }
+
+      const statusEl = document.getElementById("addStatus");
+      const errorEl = document.getElementById("addError");
+      const submitBtn = document.getElementById("addSubmit");
+
+      errorEl.style.display = "none";
+      statusEl.innerHTML = '<span class="spinner"></span> Extracting recipe (this may take a minute for videos — checking links, subtitles, and audio)...';
+      statusEl.style.display = "block";
+      submitBtn.disabled = true;
+
+      const body = { url, user_id: currentUserId };
+
+      const username = document.getElementById("addUsername").value.trim();
+      const password = document.getElementById("addPassword").value;
+      if (username) {
+        body.username = username;
+        body.password = password;
+      }
+
+      try {
+        const res = await fetch("/api/recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          const err = data.error || "Unknown error";
+          if (err.startsWith("AUTH_REQUIRED")) {
+            document.getElementById("authFields").style.display = "block";
+            showAddError("This content requires login. Enter your credentials below and try again.");
+          } else {
+            showAddError(err);
+          }
+          submitBtn.disabled = false;
+          statusEl.style.display = "none";
+          return;
+        }
+
+        closeAddModal();
+        await loadRecipes();
+        await loadTags();
+        selectRecipe(data.id);
+      } catch (e) {
+        showAddError("Network error: " + e.message);
+        submitBtn.disabled = false;
+        statusEl.style.display = "none";
+      }
+    }
+
+    async function submitAddImage() {
+      const fileInput = document.getElementById("imageFile");
+      const file = fileInput.files[0];
+      if (!file) {
+        showAddError("Please select an image.");
+        return;
+      }
+
+      const statusEl = document.getElementById("addStatus");
+      const errorEl = document.getElementById("addError");
+      const submitBtn = document.getElementById("addSubmit");
+
+      errorEl.style.display = "none";
+      statusEl.innerHTML = '<span class="spinner"></span> Extracting text from image...';
+      statusEl.style.display = "block";
+      submitBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append("image", file);
+      const title = document.getElementById("imageTitle").value.trim();
+      if (title) formData.append("title", title);
+      if (currentUserId) formData.append("user_id", currentUserId);
+
+      try {
+        const res = await fetch("/api/recipes/from-image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAddError(data.error || "Unknown error");
+          submitBtn.disabled = false;
+          statusEl.style.display = "none";
+          return;
+        }
+
+        closeAddModal();
+        await loadRecipes();
+        await loadTags();
+        selectRecipe(data.id);
+      } catch (e) {
+        showAddError("Network error: " + e.message);
+        submitBtn.disabled = false;
+        statusEl.style.display = "none";
+      }
+    }
+
+    function showAddError(msg) {
+      const el = document.getElementById("addError");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    // ---- Edit recipe ----
+    function editRecipe(id) {
+      const r = recipes.find(r => r.id === id);
+      if (!r) return;
+
+      const el = document.getElementById("detailContent");
+      el.innerHTML = `
+        <div class="detail-header">
+          <h2>Edit Recipe</h2>
+        </div>
+        <label style="font-weight:600;font-size:0.85rem;color:#555;margin-bottom:0.3rem;display:block">Title</label>
+        <input type="text" id="editTitle" value="${esc(r.title)}" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-bottom:1rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEdit(${id});}">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;margin-bottom:0.3rem;display:block">Ingredients (one per line)</label>
+        <textarea id="editIngredients" rows="8" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:inherit;margin-bottom:1rem;resize:vertical;" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();saveEdit(${id});}">${r.ingredients.map(i => esc(i)).join("\n")}</textarea>
+        <label style="font-weight:600;font-size:0.85rem;color:#555;margin-bottom:0.3rem;display:block">Steps (one per line)</label>
+        <textarea id="editSteps" rows="8" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:inherit;margin-bottom:1rem;resize:vertical;" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();saveEdit(${id});}">${r.steps.map(s => esc(s)).join("\n")}</textarea>
+        <div style="font-size:0.75rem;color:#999;margin-bottom:0.5rem;">Press Cmd+Enter (or Ctrl+Enter) to save</div>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+          <button class="btn-secondary" onclick="selectRecipe(${id})" style="padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer">Cancel</button>
+          <button class="btn-primary" onclick="saveEdit(${id})" style="padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer">Save</button>
+        </div>
+      `;
+    }
+
+    async function saveEdit(id) {
+      const title = document.getElementById("editTitle").value.trim();
+      const ingredients = document.getElementById("editIngredients").value.split("\n").map(l => l.trim()).filter(Boolean);
+      const steps = document.getElementById("editSteps").value.split("\n").map(l => l.trim()).filter(Boolean);
+
+      await api(`/api/recipes/${id}`, { method: "PATCH", body: { title, ingredients, steps } });
+      await loadRecipes();
+      selectRecipe(id);
+    }
+
+    // ---- Delete ----
+    async function deleteRecipe(id) {
+      if (!confirm("Delete this recipe?")) return;
+      await api(`/api/recipes/${id}`, { method: "DELETE" });
+      selectedId = null;
+      showEmptyDetail();
+      await loadRecipes();
+    }
+
+    // ---- Helpers ----
+    function esc(str) {
+      const d = document.createElement("div");
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // ---- Users ----
+    async function loadUsers() {
+      allUsers = await api("/api/users");
+      const select = document.getElementById("userSelect");
+      select.innerHTML = allUsers.map(u =>
+        `<option value="${u.id}"${u.id === currentUserId ? ' selected' : ''}>${esc(u.name)}</option>`
+      ).join("");
+    }
+
+    function switchUser() {
+      const select = document.getElementById("userSelect");
+      currentUserId = parseInt(select.value);
+      localStorage.setItem("recipeUserId", currentUserId);
+      selectedId = null;
+      showEmptyDetail();
+      loadRecipes();
+    }
+
+    async function addUser() {
+      const name = prompt("Enter new user name:");
+      if (!name || !name.trim()) return;
+      const user = await api("/api/users", { method: "POST", body: { name: name.trim() } });
+      currentUserId = user.id;
+      localStorage.setItem("recipeUserId", currentUserId);
+      await loadUsers();
+      selectedId = null;
+      showEmptyDetail();
+      await loadRecipes();
+    }
+
+    // ---- Init ----
+    async function init() {
+      await loadUsers();
+      // Restore last selected user or default to first
+      const saved = localStorage.getItem("recipeUserId");
+      if (saved && allUsers.some(u => u.id === parseInt(saved))) {
+        currentUserId = parseInt(saved);
+      } else if (allUsers.length) {
+        currentUserId = allUsers[0].id;
+      }
+      document.getElementById("userSelect").value = currentUserId;
+      await loadTags();
+      await loadRecipes();
+    }
+
+    // ---- Resizable tag section ----
+    (function() {
+      const handle = document.getElementById("tagResizeHandle");
+      const tagFilters = document.getElementById("tagFilters");
+      let dragging = false;
+
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        dragging = true;
+        handle.classList.add("dragging");
+        document.body.style.cursor = "row-resize";
+        document.body.style.userSelect = "none";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const rect = tagFilters.getBoundingClientRect();
+        const newHeight = Math.max(40, e.clientY - rect.top);
+        tagFilters.style.height = newHeight + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      });
+    })();
+
+    // ---- Resizable sidebar ----
+    (function() {
+      const handle = document.getElementById("resizeHandle");
+      const sidebar = document.querySelector(".sidebar");
+      let dragging = false;
+
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        dragging = true;
+        handle.classList.add("dragging");
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const newWidth = Math.max(250, Math.min(e.clientX, window.innerWidth - 300));
+        sidebar.style.width = newWidth + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      });
+    })();
+
+    init();
+  </script>
+</body>
+</html>
