@@ -1241,13 +1241,8 @@
     async function addUser() {
       const name = prompt("Enter new user name:");
       if (!name || !name.trim()) return;
-      const user = await api("/api/users", { method: "POST", body: { name: name.trim() } });
-      currentUserId = user.id;
-      localStorage.setItem("recipeUserId", currentUserId);
+      await api("/api/users", { method: "POST", body: { name: name.trim() } });
       await loadUsers();
-      selectedId = null;
-      showEmptyDetail();
-      await loadRecipes();
     }
 
     // ---- Init ----
@@ -1259,6 +1254,7 @@
         currentUserId = parseInt(saved);
       } else if (allUsers.length) {
         currentUserId = allUsers[0].id;
+        localStorage.setItem("recipeUserId", currentUserId);
       }
       document.getElementById("userSelect").value = currentUserId;
       await loadTags();
