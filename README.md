@@ -2,17 +2,56 @@
 
 A personal recipe library that can pull recipes in from websites, cooking videos and screenshots. It's a Flask app with a JSON API, and it stores everything in a local SQLite database (`recipes.db`).
 
-## Features
+<img src="assets/main_view.png" alt="Recipe Library main view: a search box and tag filter buttons above the recipe list on the left, and the selected recipe's source link, photo, tags and ingredients on the right" width="800">
 
-- **Three ways to add a recipe:**
-  - **From URL:** paste a link to a recipe webpage or a cooking video (YouTube, Instagram, TikTok and similar).
-  - **From Image:** upload a screenshot or photo of a recipe and it's read with OCR.
-  - **Type It In:** enter the title, ingredients and steps by hand.
-- **Edit** any recipe's title, ingredients and steps after it's saved.
-- **Tags:** comes with Vegan, Vegetarian, Dessert and Meal. You can create, assign and delete your own in *Manage Tags*.
-- **Search** across titles, ingredients and tags. Separate terms with commas to match recipes that contain all of them (e.g. `mushrooms, tofu`).
-- **Multiple users:** each recipe belongs to a user, and you can switch between users' libraries. The selected user is remembered in the browser.
-- **Saved logins:** if a video site needs you to sign in, you can enter a username and password, which are saved for that site.
+Your recipes are listed on the left, under the search box and a row of tag buttons. Click a recipe to see its source link, photo, tags, ingredients and steps on the right, where you can also **Edit** or **Delete** it.
+
+## Adding recipes
+
+Click **+ Add Recipe** and choose one of three ways to add a recipe.
+
+### From a link
+
+Paste a link to either:
+
+- **a recipe webpage**, such as a food blog or recipe site, or
+- **a recipe video** on YouTube, Instagram, TikTok or a similar site.
+
+The app pulls out the title, ingredients, steps and photo for you. For videos, it reads the video's description and captions, and if those don't contain the recipe, it transcribes the audio. If a video site needs you to sign in, the app asks for a username and password and remembers them for that site.
+
+<img src="assets/add_from_url.png" alt="Add Recipe dialog on the From URL tab, with a Recipe URL (webpage or video) field" width="450">
+
+### From a screenshot
+
+Give the recipe a title and upload a screenshot or photo of it. The app reads the text in the image (OCR) and splits it into ingredients and steps.
+
+<img src="assets/add_from_image.png" alt="Add Recipe dialog on the From Image tab, with a recipe title field and a file upload button" width="450">
+
+### Manually
+
+Type in the title, then the ingredients and steps, one per line.
+
+<img src="assets/add_manually.png" alt="Add Recipe dialog on the Type It In tab, with title, ingredients and steps fields" width="450">
+
+You can fix anything the app got wrong with **Edit** after the recipe is saved.
+
+## Tags
+
+Tags help you organize recipes by things like type of dish, diet or main ingredient. The app starts with **Vegan**, **Vegetarian**, **Dessert** and **Meal**, and you can add as many of your own as you like.
+
+- **Manage your tags:** click **Manage Tags** to create new tags or delete ones you no longer need.
+- **Tag a recipe:** open the recipe and click **+ Tag** to choose a tag. Type a new name in the picker to create a tag on the spot.
+
+<img src="assets/manage_tags.png" alt="Manage Tags dialog with a New tag name field, an Add button and a list of tags that can be deleted" width="450">
+
+## Searching and filtering
+
+- **By tag:** click a tag button above the recipe list to show only recipes with that tag. Click it again to show all recipes.
+- **By ingredient (or title or tag):** type in the search box. For example, `mushrooms` finds every recipe that uses mushrooms. Separate words with commas to find recipes that match all of them: `mushrooms, tofu` shows only recipes with both.
+
+## Other features
+
+- **Multiple users:** each recipe belongs to a user. Use the menu at the top to switch between users' libraries, or **+** to add a user. The app remembers the selected user in your browser.
 
 ## How recipe extraction works
 
@@ -71,5 +110,6 @@ The repo ships an empty starter database, `recipes_template.db`. It has all the 
 | `recipes_template.db` | Empty starter database; copy it to `recipes.db` before first run |
 | `recipes.db` | Your local SQLite database with recipes, tags, users and saved logins (not committed) |
 | `requirements.txt` | Python dependencies |
+| `assets/` | Screenshots used in this README |
 
 > **Note:** saved logins are stored as plain text in `recipes.db`. That's one reason the file is git-ignored. Don't force-add it to the repo.
