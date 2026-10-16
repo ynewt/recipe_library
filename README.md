@@ -30,10 +30,17 @@ Requires Python 3. Image upload also needs the [Tesseract](https://github.com/te
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+cp recipes_template.db recipes.db   # first time only: create your own database from the template
 python app.py
 ```
 
-Then open http://localhost:5003. The database is created, or updated to the latest structure, automatically on startup.
+Then open http://localhost:5003.
+
+### The database
+
+The repo ships an empty starter database, `recipes_template.db`. It has all the tables and the default tags but no recipes or users. **Before running the app for the first time, rename (or copy) it to `recipes.db`.** The app reads and writes `recipes.db`, which is where your recipes will live.
+
+`recipes.db` is listed in `.gitignore`, so your personal recipes (and any saved logins) stay on your computer and are never committed. Keep `recipes_template.db` unchanged so it stays a clean starting point.
 
 ## API
 
@@ -61,7 +68,8 @@ Then open http://localhost:5003. The database is created, or updated to the late
 | `app.py` | Flask app, database setup and API on port 5003 |
 | `extractor.py` | Gets recipes out of webpages, videos and images |
 | `templates/index.html` | The UI: HTML, CSS and JavaScript |
-| `recipes.db` | SQLite database holding recipes, tags, users and saved logins |
+| `recipes_template.db` | Empty starter database; copy it to `recipes.db` before first run |
+| `recipes.db` | Your local SQLite database with recipes, tags, users and saved logins (not committed) |
 | `requirements.txt` | Python dependencies |
 
-> **Note:** saved logins are stored as plain text in `recipes.db`, and that file is committed to this public repository. Don't commit `recipes.db` after saving a login.
+> **Note:** saved logins are stored as plain text in `recipes.db`. That's one reason the file is git-ignored. Don't force-add it to the repo.
