@@ -30,7 +30,6 @@ Requires Python 3. Image upload also needs the [Tesseract](https://github.com/te
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install pytesseract pillow   # used for image upload, not yet in requirements.txt
 python app.py
 ```
 

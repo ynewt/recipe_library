@@ -1,7 +1,10 @@
 flask
 requests
+curl-cffi
 beautifulsoup4
 recipe-scrapers
 yt-dlp
 torch
 transformers
+pytesseract
+pillow
